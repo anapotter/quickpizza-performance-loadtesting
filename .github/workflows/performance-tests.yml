@@ -30,6 +30,9 @@ jobs:
       - name: Setup k6
         uses: grafana/setup-k6-action@v1
       
+      - name: Create reports directory
+        run: mkdir -p reports
+      
       - name: Run smoke test
         run: k6 run tests/smoke.js
       
@@ -60,6 +63,9 @@ jobs:
       
       - name: Setup k6
         uses: grafana/setup-k6-action@v1
+      
+      - name: Create reports directory
+        run: mkdir -p reports
       
       - name: Run load test
         run: k6 run tests/load.js
