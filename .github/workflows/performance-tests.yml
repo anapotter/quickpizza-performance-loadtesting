@@ -1,0 +1,95 @@
+name: Performance Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    name: Smoke Test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci || npm install
+      
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+      
+      - name: Run smoke test
+        run: k6 run tests/smoke.js
+      
+      - name: Upload smoke test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test-results
+          path: reports/smoke-*
+          retention-days: 30
+
+  load-test:
+    runs-on: ubuntu-latest
+    name: Load Test
+    needs: smoke-test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci || npm install
+      
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+      
+      - name: Run load test
+        run: k6 run tests/load.js
+      
+      - name: Upload load test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-test-results
+          path: reports/load-*
+          retention-days: 30
+
+  publish-results:
+    runs-on: ubuntu-latest
+    name: Publish Results
+    needs: [smoke-test, load-test]
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Display structure of downloaded files
+        run: ls -R
+      
+      - name: Upload combined results
+        uses:    need/upload-artifact@v4
+        with:
+          name: all-test-results
+          path: |
+            smoke-test-results/
+            load-test-results/
+          retention-days: 30
