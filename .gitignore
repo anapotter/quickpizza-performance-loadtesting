@@ -1,11 +1,10 @@
 # Dependencies
 node_modules/
-package-lock.json
 
-# Test reports
+# Test reports (but keep package.json/package-lock.json)
 reports/
-*.html
-*.json
+reports/*.html
+reports/*.json
 
 # Playwright
 test-results/
